@@ -26,16 +26,21 @@ import joblib
 import matplotlib.pyplot as plt
 import plotly.express as px
 import plotly.graph_objects as go
+
 st.set_page_config(page_title="EV Charging Infra + GenAI", layout="wide", initial_sidebar_state="expanded")
 
-# Optional libs
+# --------------------------
+# Load Environment Variables
+# --------------------------
 try:
     from dotenv import load_dotenv
-    load_dotenv()
+    load_dotenv("grok.env")  # explicitly load from grok.env (or .env if you rename it)
 except Exception:
     pass
 
+# --------------------------
 # Optional Lottie animation support
+# --------------------------
 try:
     from streamlit_lottie import st_lottie
     import requests  # used for fetching lottie json
@@ -43,7 +48,9 @@ try:
 except Exception:
     LOTTIE_AVAILABLE = False
 
+# --------------------------
 # Groq SDK
+# --------------------------
 try:
     from groq import Groq
     GROQ_SDK_AVAILABLE = True
@@ -53,17 +60,21 @@ except Exception:
 # --------------------------
 # Config / Keys
 # --------------------------
-GROQ_API_KEY = os.getenv("GROQ_API_KEY", "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")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")  # only from env, no fallback
 DEFAULT_GROQ_MODEL = "llama-3.3-70b-versatile"
 
+# --------------------------
 # Init Groq client safely
+# --------------------------
 groq_client = None
-try:
-    from groq import Groq
-    groq_client = Groq(api_key=GROQ_API_KEY)
-except Exception as e:
-    print(f"⚠️ Error initializing Groq client: {e}")
-    groq_client = None
+if GROQ_API_KEY:
+    try:
+        groq_client = Groq(api_key=GROQ_API_KEY)
+    except Exception as e:
+        print(f"⚠️ Error initializing Groq client: {e}")
+else:
+    print("❌ GROQ_API_KEY not found. Please check your grok.env or .env file.")
+
 
 
 # --------------------------
