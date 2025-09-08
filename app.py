@@ -28,25 +28,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 st.set_page_config(page_title="EV Charging Infra + GenAI", layout="wide", initial_sidebar_state="expanded")
-
-# --------------------------
-# Load Environment Variables
-# --------------------------
 from dotenv import load_dotenv
-
-GROQ_API_KEY = None
-
-try:
-    # First, try Streamlit Cloud secrets
-    if "GROQ_API_KEY" in st.secrets:
-        GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
-    else:
-        # Local development: load from grok.env or .env
-        load_dotenv("grok.env")
-        GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-except Exception as e:
-    st.error(f"⚠️ Could not load GROQ_API_KEY: {e}")
-
 
 # --------------------------
 # Optional Lottie animation support
@@ -68,24 +50,32 @@ except Exception:
     GROQ_SDK_AVAILABLE = False
 
 # --------------------------
-# Config / Keys
+# Config / Keys (corrected)
 # --------------------------
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")  # only from env, no fallback
 DEFAULT_GROQ_MODEL = "llama-3.3-70b-versatile"
+
+# Load Groq API key safely (Streamlit secrets take priority, fallback to .env)
+GROQ_API_KEY = None
+try:
+    if "GROQ_API_KEY" in st.secrets:
+        GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
+    else:
+        load_dotenv("grok.env")  # or ".env"
+        GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+except Exception as e:
+    st.warning(f"Could not load GROQ_API_KEY: {e}")
 
 # --------------------------
 # Init Groq client safely
 # --------------------------
 groq_client = None
-if GROQ_API_KEY:
+if GROQ_API_KEY and GROQ_SDK_AVAILABLE:
     try:
         groq_client = Groq(api_key=GROQ_API_KEY)
     except Exception as e:
-        print(f"⚠️ Error initializing Groq client: {e}")
+        st.error(f"Error initializing Groq client: {e}")
 else:
-    print("❌ GROQ_API_KEY not found. Please check your grok.env or .env file.")
-
-
+    st.warning("Groq client not initialized. Set GROQ_API_KEY via secrets or .env.")
 
 # --------------------------
 # GenAI wrapper
@@ -108,7 +98,6 @@ def call_genai_chat(prompt: str, model: str = DEFAULT_GROQ_MODEL, max_tokens: in
             temperature=temperature,
             max_tokens=max_tokens
         )
-        # Extract content with safe fallbacks
         try:
             return resp.choices[0].message.content
         except Exception:
@@ -209,7 +198,6 @@ def compute_chargers_and_grid(df_local, charger_kw=50, utilization_diversity=0.5
 # --------------------------
 df = load_csv_data("preprocessed_ev_data.csv")
 model = load_model("forecasting_ev_model.pkl")
-
 # --------------------------
 # Streamlit layout & styling
 # --------------------------
