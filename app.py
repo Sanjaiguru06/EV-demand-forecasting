@@ -33,10 +33,13 @@ st.set_page_config(page_title="EV Charging Infra + GenAI", layout="wide", initia
 # Load Environment Variables
 # --------------------------
 try:
-    from dotenv import load_dotenv
-    load_dotenv("grok.env")  # explicitly load from grok.env (or .env if you rename it)
-except Exception:
-    pass
+    if "GROQ_API_KEY" in st.secrets:
+        os.environ["GROQ_API_KEY"] = st.secrets["GROQ_API_KEY"]
+    else:
+        from dotenv import load_dotenv
+        load_dotenv("grok.env")  # fallback for local development
+except Exception as e:
+    print(f"⚠️ Could not load secrets: {e}")
 
 # --------------------------
 # Optional Lottie animation support
