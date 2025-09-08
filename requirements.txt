@@ -7,3 +7,4 @@ joblib
 python-dotenv
 groq
 requests
+scikit-learn
