@@ -1,1 +1,9 @@
-"streamlitpandasnumpymatplotlibplotlyjoblibpython-dotenvgroqrequests" 
+streamlit
+pandas
+numpy
+matplotlib
+plotly
+joblib
+python-dotenv
+groq
+requests
