@@ -32,14 +32,21 @@ st.set_page_config(page_title="EV Charging Infra + GenAI", layout="wide", initia
 # --------------------------
 # Load Environment Variables
 # --------------------------
+from dotenv import load_dotenv
+
+GROQ_API_KEY = None
+
 try:
+    # First, try Streamlit Cloud secrets
     if "GROQ_API_KEY" in st.secrets:
-        os.environ["GROQ_API_KEY"] = st.secrets["GROQ_API_KEY"]
+        GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
     else:
-        from dotenv import load_dotenv
-        load_dotenv("grok.env")  # fallback for local development
+        # Local development: load from grok.env or .env
+        load_dotenv("grok.env")
+        GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 except Exception as e:
-    print(f"⚠️ Could not load secrets: {e}")
+    st.error(f"⚠️ Could not load GROQ_API_KEY: {e}")
+
 
 # --------------------------
 # Optional Lottie animation support
