@@ -1,1 +1,2 @@
--e "# Environment files\n.env\ngrok.env\n" 
+-e "# Environment files\n.env\n" 
+
