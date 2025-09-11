@@ -18,7 +18,6 @@ from datetime import datetime
 import io
 import base64
 import time
-
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -28,7 +27,6 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 st.set_page_config(page_title="EV Charging Infra + GenAI", layout="wide", initial_sidebar_state="expanded")
-from dotenv import load_dotenv
 
 # --------------------------
 # Optional Lottie animation support
@@ -50,12 +48,16 @@ except Exception:
     GROQ_SDK_AVAILABLE = False
 
 # --------------------------
-# Config / Keys (Temporary Hardcoded for Testing)
+# Config / Keys (Streamlit secrets only)
 # --------------------------
 DEFAULT_GROQ_MODEL = "llama-3.3-70b-versatile"
 
-# ⚠️ Hardcoded API key (REMOVE later, use secrets/.env instead)
-GROQ_API_KEY = "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"
+# Securely load Groq API key from Streamlit secrets
+try:
+    GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
+except Exception as e:
+    GROQ_API_KEY = None
+    st.warning(f"Could not load GROQ_API_KEY from Streamlit secrets: {e}")
 
 # --------------------------
 # Init Groq client safely
@@ -68,7 +70,7 @@ if GROQ_API_KEY and GROQ_SDK_AVAILABLE:
     except Exception as e:
         st.error(f"❌ Failed to initialize Groq client: {e}")
 else:
-    st.warning("⚠️ Groq SDK not available. Install with `pip install groq`")
+    st.warning("⚠️ Groq client not initialized. Set GROQ_API_KEY in Streamlit secrets.")
 
 # --------------------------
 # GenAI wrapper
@@ -76,12 +78,11 @@ else:
 def call_genai_chat(prompt: str, model: str = DEFAULT_GROQ_MODEL, max_tokens: int = 400, temperature: float = 0.0) -> str:
     """
     Call Groq chat completions and return text content.
-    If groq_client is not initialized, return friendly message.
+    If groq_client is not initialized, show a user-friendly message.
     """
     if groq_client is None:
-        return ("⚠️ Groq client is not initialized. Set GROQ_API_KEY in secrets or grok.env. "
+        return ("⚠️ Groq client is not initialized. Set GROQ_API_KEY in Streamlit secrets. "
                 "LLM features are disabled until a valid key is provided.")
-
     try:
         resp = groq_client.chat.completions.create(
             model=model,
@@ -95,6 +96,7 @@ def call_genai_chat(prompt: str, model: str = DEFAULT_GROQ_MODEL, max_tokens: in
         return resp.choices[0].message.content
     except Exception as e:
         return f"⚠️ Error calling Groq API: {e}"
+
 
 
 # --------------------------
