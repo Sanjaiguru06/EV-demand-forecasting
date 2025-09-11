@@ -50,30 +50,12 @@ except Exception:
     GROQ_SDK_AVAILABLE = False
 
 # --------------------------
-# Config / Keys (Safe Loading)
+# Config / Keys (Temporary Hardcoded for Testing)
 # --------------------------
 DEFAULT_GROQ_MODEL = "llama-3.3-70b-versatile"
 
-GROQ_API_KEY = None
-if GROQ_SDK_AVAILABLE:
-    try:
-        # Priority 1 → Streamlit secrets
-        if "GROQ_API_KEY" in st.secrets:
-            GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
-            st.write("✅ Loaded Groq API Key from Streamlit secrets")
-        else:
-            # Priority 2 → .env
-            load_dotenv("grok.env")  # or ".env"
-            GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-
-            if GROQ_API_KEY:
-                st.write("✅ Loaded Groq API Key from .env")
-            else:
-                st.warning("⚠️ GROQ_API_KEY not found. Please set it in Streamlit secrets or grok.env")
-    except Exception as e:
-        st.warning(f"⚠️ Could not load GROQ_API_KEY: {e}")
-else:
-    st.warning("⚠️ Groq SDK not available. Install with `pip install groq`")
+# ⚠️ Hardcoded API key (REMOVE later, use secrets/.env instead)
+GROQ_API_KEY = "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"
 
 # --------------------------
 # Init Groq client safely
@@ -82,10 +64,11 @@ groq_client = None
 if GROQ_API_KEY and GROQ_SDK_AVAILABLE:
     try:
         groq_client = Groq(api_key=GROQ_API_KEY)
+        st.success("✅ Groq client initialized successfully!")
     except Exception as e:
         st.error(f"❌ Failed to initialize Groq client: {e}")
 else:
-    st.info("ℹ️ GenAI features are disabled (no valid API key).")
+    st.warning("⚠️ Groq SDK not available. Install with `pip install groq`")
 
 # --------------------------
 # GenAI wrapper
