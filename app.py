@@ -50,20 +50,30 @@ except Exception:
     GROQ_SDK_AVAILABLE = False
 
 # --------------------------
-# Config / Keys (corrected)
+# Config / Keys (Safe Loading)
 # --------------------------
 DEFAULT_GROQ_MODEL = "llama-3.3-70b-versatile"
 
-# Load Groq API key safely (Streamlit secrets take priority, fallback to .env)
 GROQ_API_KEY = None
-try:
-    if "GROQ_API_KEY" in st.secrets:
-        GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
-    else:
-        load_dotenv("grok.env")  # or ".env"
-        GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-except Exception as e:
-    st.warning(f"Could not load GROQ_API_KEY: {e}")
+if GROQ_SDK_AVAILABLE:
+    try:
+        # Priority 1 → Streamlit secrets
+        if "GROQ_API_KEY" in st.secrets:
+            GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
+            st.write("✅ Loaded Groq API Key from Streamlit secrets")
+        else:
+            # Priority 2 → .env
+            load_dotenv("grok.env")  # or ".env"
+            GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+
+            if GROQ_API_KEY:
+                st.write("✅ Loaded Groq API Key from .env")
+            else:
+                st.warning("⚠️ GROQ_API_KEY not found. Please set it in Streamlit secrets or grok.env")
+    except Exception as e:
+        st.warning(f"⚠️ Could not load GROQ_API_KEY: {e}")
+else:
+    st.warning("⚠️ Groq SDK not available. Install with `pip install groq`")
 
 # --------------------------
 # Init Groq client safely
@@ -73,9 +83,9 @@ if GROQ_API_KEY and GROQ_SDK_AVAILABLE:
     try:
         groq_client = Groq(api_key=GROQ_API_KEY)
     except Exception as e:
-        st.error(f"Error initializing Groq client: {e}")
+        st.error(f"❌ Failed to initialize Groq client: {e}")
 else:
-    st.warning("Groq client not initialized. Set GROQ_API_KEY via secrets or .env.")
+    st.info("ℹ️ GenAI features are disabled (no valid API key).")
 
 # --------------------------
 # GenAI wrapper
@@ -86,8 +96,9 @@ def call_genai_chat(prompt: str, model: str = DEFAULT_GROQ_MODEL, max_tokens: in
     If groq_client is not initialized, return friendly message.
     """
     if groq_client is None:
-        return ("⚠️ Groq client is not initialized. Set GROQ_API_KEY environment variable or replace the placeholder "
-                "for local testing. LLM features will not work until a valid key is provided.")
+        return ("⚠️ Groq client is not initialized. Set GROQ_API_KEY in secrets or grok.env. "
+                "LLM features are disabled until a valid key is provided.")
+
     try:
         resp = groq_client.chat.completions.create(
             model=model,
@@ -98,15 +109,10 @@ def call_genai_chat(prompt: str, model: str = DEFAULT_GROQ_MODEL, max_tokens: in
             temperature=temperature,
             max_tokens=max_tokens
         )
-        try:
-            return resp.choices[0].message.content
-        except Exception:
-            try:
-                return resp.choices[0].message["content"]
-            except Exception:
-                return str(resp)
+        return resp.choices[0].message.content
     except Exception as e:
         return f"⚠️ Error calling Groq API: {e}"
+
 
 # --------------------------
 # Utilities / I/O
